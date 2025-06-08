@@ -1,0 +1,5 @@
+---
+led:
+  - id: 0
+    address: 192.168.0.127
+    kind: wled

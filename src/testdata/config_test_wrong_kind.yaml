@@ -1,0 +1,13 @@
+---
+leds:
+  - id: 0
+    address: 192.168.0.127
+    kind: wledz
+
+  - id: 1
+    address: 192.168.1.48
+    kind: wiz
+
+  - id: 2
+    address: 192.168.0.127
+    kind: wled

@@ -1,0 +1,9 @@
+leds:
+  - id: 0
+    description: "RGB strip, below desk's shelves"
+    address: 192.168.1.48
+    kind: wled
+  - id: 1
+    description: "RGB bulb, back of desk's monitor"
+    address: 192.168.1.85
+    kind: shelly
