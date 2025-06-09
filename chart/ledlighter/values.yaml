@@ -1,0 +1,71 @@
+nameOverride: ""
+fullnameOverride: ""
+replicaCount: 1
+image:
+  repository: ghcr.io/xenos76/ledlighter
+  pullPolicy: IfNotPresent
+  tag: ""
+imagePullSecrets: []
+#
+# Application Configuration via configMap
+# and volume mounts
+#
+appConfig:
+  leds:
+    - id: 0
+      description: "RGB strip, below desk's shelves"
+      address: 192.168.1.48
+      kind: wled
+    - id: 1
+      description: "RGB bulb, back of desk's monitor"
+      address: 192.168.1.85
+      kind: shelly
+#
+volumes:
+  - name: config-volume
+    configMap:
+      name: ledlighter-config
+#
+volumeMounts:
+  - name: config-volume
+    mountPath: /config.yaml
+    subPath: config.yaml
+#
+podAnnotations: {}
+podLabels: {}
+#
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+service:
+  type: ClusterIP
+  port: 3080
+#
+resources: {}
+# limits:
+#   cpu: 100m
+#   memory: 128Mi
+# requests:
+#   cpu: 100m
+#   memory: 128Mi
+
+livenessProbe:
+  httpGet:
+    path: /livez
+    port: http
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: http
+#
+#  Istio config
+#
+istio:
+  enable: true
+  virtualservice:
+    hosts:
+      - ledlighter.k3s.os76.xyz
+    gateways:
+      - istio-system/gateway-priv-os76

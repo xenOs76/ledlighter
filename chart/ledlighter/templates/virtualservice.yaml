@@ -1,0 +1,25 @@
+# vi: ft=helm
+{{ if .Values.istio.enable }}
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ include "ledlighter.fullname" . }}
+  labels:
+    {{- include "ledlighter.labels" . | nindent 4 }}
+spec:
+  hosts:
+  {{- with .Values.istio.virtualservice.hosts }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  gateways:
+  {{- with .Values.istio.virtualservice.gateways }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  http:
+    - route:
+        - destination:
+            host: {{ include "ledlighter.fullname" . }}
+            port:
+              number: {{ .Values.service.port }}
+{{ end }}
