@@ -12,5 +12,8 @@ pkgs.mkShell {
 
   CGO_ENABLED = 0;
 
-  shellHook = '''';
+  shellHook = ''
+    echo "Exporting GITHUB_TOKEN..."
+    export GITHUB_TOKEN=$(cat ~/.config/goreleaser/github_token || echo NOT_FOUND)
+  '';
 }
