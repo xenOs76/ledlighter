@@ -11,6 +11,7 @@ pkgs.mkShell {
   ];
 
   CGO_ENABLED = 0;
+  COMPOSE_BAKE = "true";
 
   shellHook = ''
     echo "Exporting GITHUB_TOKEN..."

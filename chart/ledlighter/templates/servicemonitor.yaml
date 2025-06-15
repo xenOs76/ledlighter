@@ -1,0 +1,28 @@
+---
+{{ if .Values.prometheus.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  labels:
+    {{- include "ledlighter.labels" . | nindent 4 }}
+  {{- with .Values.prometheus.serviceMonitor.labels }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  name: {{ include "ledlighter.fullname" . }}
+  namespace: {{ .Values.prometheus.serviceMonitor.namespace | default .Release.Namespace }}
+spec:
+  endpoints:
+  - interval: {{ .Values.prometheus.serviceMonitor.scrapingInterval | default "30s" }}
+    targetPort: {{ .Values.service.metricsPort }}
+    path: {{ .Values.prometheus.serviceMonitor.metricsPath | default "/metrics" }}
+  namespaceSelector:
+      {{- with .Values.prometheus.serviceMonitor.namespaceSelector }}
+      {{- toYaml . | nindent 4 }}
+      {{- end }}
+  selector:
+    matchLabels:
+      {{- with .Values.additionalLabels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+{{ end }}
+
