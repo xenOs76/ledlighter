@@ -1,0 +1,27 @@
+networks:
+  monitoring:
+    driver: bridge
+services:
+  app:
+    build: .
+    restart: always
+    ports:
+      # http
+      - "3080:3080"
+      # metrics
+      - "3088:3088"
+    volumes:
+      - type: bind
+        source: ./src/config.yaml
+        target: /config.yaml
+        read_only: true
+    networks:
+      - monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./docker-compose/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - monitoring

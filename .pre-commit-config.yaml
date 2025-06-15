@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+        exclude: ^chart\/.*\/templates\/.*yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: detect-aws-credentials
+      - id: detect-private-key
+      - id: check-shebang-scripts-are-executable
+      - id: check-executables-have-shebangs
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.2
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/gruntwork-io/pre-commit
+    rev: v0.1.15
+    hooks:
+      - id: helmlint
+# - repo: https://github.com/norwoodj/helm-docs
+#   rev: v1.10.0
+#   hooks:
+#     - id: helm-docs
+#       files: (README\.md\.gotmpl|(Chart|requirements|values)\.yaml)$
