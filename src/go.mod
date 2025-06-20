@@ -4,7 +4,7 @@ go 1.23.7
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/go-chi/chi/v5 v5.2.1
+	github.com/go-chi/chi/v5 v5.2.2
 	github.com/prometheus/client_golang v1.22.0
 	github.com/spf13/viper v1.20.1
 	github.com/toshi0607/chi-prometheus v0.1.4
