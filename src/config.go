@@ -10,7 +10,8 @@ import (
 )
 
 type Config struct {
-	Leds []Led `mapstructure:"leds"`
+	Leds         []Led `mapstructure:"leds"`
+	EnableTraces bool  `mapstructure:"enableTraces"`
 }
 
 func GetLedsMap(cfg *Config) (map[int]Led, error) {

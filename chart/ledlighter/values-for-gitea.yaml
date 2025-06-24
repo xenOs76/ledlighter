@@ -2,4 +2,4 @@
 image:
   repository: registry.0.os76.xyz/xeno/ledlighter
   pullPolicy: IfNotPresent
-  tag: 0.0.12
+  tag: 0.0.14

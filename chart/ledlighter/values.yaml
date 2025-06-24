@@ -19,6 +19,7 @@ additionalLabels:
 # and volume mounts
 #
 appConfig:
+  enableTraces: true
   leds:
     - id: 0
       description: "RGB strip, below desk's shelves"
@@ -83,11 +84,25 @@ istio:
       - istio-system/gateway-priv-os76
 
 #
+#  OpenTelemetry env variables
+#
+otel:
+  enable: true
+  otlpProtocol: grpc
+  otlpEndpoint: opentelemetry-collector.monitoring:4317
+  otlpMetricsProcotol: http/protobuf
+  otlpMetricsEndpoint: http://opentelemetry-collector.monitoring:4318/v1/metrics
+  otlpTracesProcotol: http/protobuf
+  otlpTracesEndpoint: http://opentelemetry-collector.monitoring:4318/v1/traces
+  tracing:
+    randomSamplingPercentage: 100
+    providerName: otel
+#
 # Prometheus
 #
 prometheus:
   serviceMonitor:
-    enabled: true
+    enable: true
     namespace: monitoring
     namespaceSelector:
       matchNames:

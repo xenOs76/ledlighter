@@ -1,3 +1,4 @@
+enableTraces: true
 leds:
   - id: 0
     description: "RGB strip, below desk's shelves"

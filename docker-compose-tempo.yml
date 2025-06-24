@@ -1,0 +1,117 @@
+#
+# Refs:
+#  https://github.com/riandyrn/otelchi/tree/master/examples/multi-services
+#  https://github.com/grafana/tempo/tree/main/example/docker-compose/local
+#
+
+networks:
+  custom_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1
+
+services:
+  app:
+    build: .
+    restart: always
+    ports:
+      # http
+      - "3080:3080"
+      # metrics
+      - "3088:3088"
+    volumes:
+      - type: bind
+        source: ./docker-compose/ledlighter-config.yaml
+        target: /config.yaml
+        read_only: true
+    environment:
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=tempo:4317
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://tempo:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://tempo:4318/v1/traces
+    networks:
+      - custom_net
+
+  echo-server:
+    image: ealen/echo-server:0.9.2
+    ports:
+      - 3002:80
+    networks:
+      custom_net:
+        ipv4_address: 10.5.0.99
+
+  # Tempo runs as user 10001, and docker compose creates the volume as root.
+  # As such, we need to chown the volume in order for Tempo to start correctly.
+  init:
+    image: &tempoImage grafana/tempo:latest
+    user: root
+    entrypoint:
+      - "chmod"
+      - "777"
+      - "/var/tempo"
+    volumes:
+      - ./tempo-data:/var/tempo
+    networks:
+      - custom_net
+
+  memcached:
+    image: memcached:1.6.38
+    container_name: memcached
+    ports:
+      - "11211:11211"
+    environment:
+      - MEMCACHED_MAX_MEMORY=64m # Set the maximum memory usage
+      - MEMCACHED_THREADS=4 # Number of threads to use
+    networks:
+      - custom_net
+
+  tempo:
+    image: *tempoImage
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./docker-compose/tempo.yaml:/etc/tempo.yaml
+      - ./tempo-data:/var/tempo
+    ports:
+      - "14268:14268" # jaeger ingest
+      - "3200:3200" # tempo
+      - "9095:9095" # tempo grpc
+      - "4317:4317" # otlp grpc
+      - "4318:4318" # otlp http
+      - "9411:9411" # zipkin
+    depends_on:
+      - init
+      - memcached
+    networks:
+      - custom_net
+
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus.yml
+      - --web.enable-remote-write-receiver
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+    ports:
+      - 9090:9090
+    volumes:
+      - ./docker-compose/prometheus.yml:/etc/prometheus.yml
+    networks:
+      - custom_net
+
+  grafana:
+    image: grafana/grafana:12.0.2
+    volumes:
+      - ./docker-compose/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
+    ports:
+      - "3001:3000"
+    networks:
+      - custom_net

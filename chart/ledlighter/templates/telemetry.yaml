@@ -1,0 +1,20 @@
+{{- if .Values.appConfig.enableTraces }}
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: {{ include "ledlighter.fullname" . }}-traces
+spec:
+  selector:
+    matchLabels:
+      {{- with .Values.additionalLabels }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+  tracing:
+  - randomSamplingPercentage: {{ .Values.otel.tracing.randomSamplingPercentage | default "50" }}
+    providers:
+     - name: {{ .Values.otel.tracing.providerName | default "otel" }}
+    customTags:
+      istio_telemetry_tag:
+        literal:
+          value: {{ include "ledlighter.fullname" . }}
+  {{- end }}
