@@ -1,5 +1,8 @@
 .direnv
 dist
+etc
 tmp
 .idea
 .vscode
+tempo-data
+docker-compose/tempo-data

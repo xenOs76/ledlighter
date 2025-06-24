@@ -1,0 +1,11 @@
+#
+#  OpenTelemetry env variables
+#
+otel:
+  enable: true
+  otlpProtocol: grpc
+  otlpEndpoint: zero.os76.xyz:4317
+  otlpMetricsProcotol: http/protobuf
+  otlpMetricsEndpoint: http://zero.os76.xyz:4318/v1/metrics
+  otlpTracesProcotol: http/protobuf
+  otlpTracesEndpoint: http://zero.os76.xyz:4318/v1/traces

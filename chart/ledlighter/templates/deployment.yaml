@@ -13,10 +13,11 @@ spec:
       {{- include "ledlighter.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
       annotations:
+      {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
       labels:
         {{- include "ledlighter.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
@@ -63,6 +64,23 @@ spec:
           volumeMounts:
             {{- toYaml . | nindent 12 }}
           {{- end }}
+          env:
+            {{- if .Values.otel.enable }}
+            {{- with .Values.otel }}
+            - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+              value: {{ .otlpProtocol }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ .otlpEndpoint }}
+            - name: OTEL_EXPORTER_OTLP_METRICS_PROTOCOL
+              value: {{ .otlpMetricsProcotol }}
+            - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+              value: {{ .otlpMetricsEndpoint }}
+            - name: OTEL_EXPORTER_OTLP_TRACES_PROTOCOL
+              value: {{ .otlpTracesProcotol }}
+            - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+              value: {{ .otlpTracesEndpoint }}
+            {{- end }}
+            {{- end }}
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

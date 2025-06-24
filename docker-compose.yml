@@ -1,6 +1,11 @@
 networks:
-  monitoring:
+  custom_net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+          gateway: 10.5.0.1
+
 services:
   app:
     build: .
@@ -12,11 +17,58 @@ services:
       - "3088:3088"
     volumes:
       - type: bind
-        source: ./src/config.yaml
+        source: ./docker-compose/ledlighter-config.yaml
         target: /config.yaml
         read_only: true
+    depends_on:
+      otel-collector:
+        condition: service_started
+    environment:
+      - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
+      - OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - OTEL_EXPORTER_OTLP_TRACES_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
     networks:
-      - monitoring
+      - custom_net
+
+  echo-server:
+    image: ealen/echo-server:0.9.2
+    ports:
+      - 3002:80
+    networks:
+      custom_net:
+        ipv4_address: 10.5.0.99
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.1
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./docker-compose/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP http receiver
+      - "8888:8888" # metrics endpoint
+      - "8889:8889" # Prometheus exporter
+    logging:
+      driver: "none"
+    networks:
+      - custom_net
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.56
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - LOG_LEVEL=debug
+    ports:
+      - 16686:16686 # for serving jaeger front-end
+      - 6831:6831/udp # for jaeger-agent UDP
+    logging:
+      driver: none # intentionally turnoff the logging so it doesn't clutter the terminal
+    networks:
+      - custom_net
+
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -24,4 +76,4 @@ services:
     volumes:
       - ./docker-compose/prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
-      - monitoring
+      - custom_net

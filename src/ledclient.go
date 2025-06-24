@@ -9,6 +9,10 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -122,6 +126,36 @@ func (lc *LedClient) Do() (*http.Response, error) {
 	req.Header.Add("User-Agent", "X-Led-Lighter")
 	res, err := client.Do(req)
 	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+func (lc *LedClient) DoWithTrace(ctx context.Context, tracer trace.Tracer) (*http.Response, error) {
+	_, span := tracer.Start(ctx, "ledClientDoWithTrace")
+	defer span.End()
+
+	client := http.Client{
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
+		Timeout:   httpTimeout * time.Second,
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		lc.httpMethod,
+		"http://"+lc.address+lc.uri,
+		lc.payload)
+	if err != nil {
+		log.Print(err)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("User-Agent", "X-Led-Lighter")
+	res, err := client.Do(req)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
 		return nil, err
 	}
 	return res, nil

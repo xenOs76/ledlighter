@@ -2,5 +2,5 @@ apiVersion: v2
 name: ledlighter
 description: ledlighter, a proxy for LED APIs
 type: application
-version: 0.1.1
-appVersion: "0.0.2"
+version: 0.1.2
+appVersion: "0.0.3"

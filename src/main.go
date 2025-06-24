@@ -10,6 +10,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	chiprometheus "github.com/toshi0607/chi-prometheus"
+
+	"github.com/riandyrn/otelchi"
+	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 var (
@@ -29,6 +33,18 @@ func prometheusInit() {
 	prometheus.MustRegister(stateProcessed)
 }
 
+func tracerInit(cfg *Config) trace.Tracer {
+	tracer := noop.NewTracerProvider().Tracer("noop")
+	if cfg.EnableTraces {
+		tracer, err := NewTracer(appName)
+		if err != nil {
+			log.Fatalf("unable to initialize tracer due: %v", err)
+		}
+		return tracer
+	}
+	return tracer
+}
+
 func main() {
 	cfg, err := LoadConfig()
 	if err != nil {
@@ -41,6 +57,8 @@ func main() {
 	}
 
 	lc := LedClient{Leds: ledsMap}
+
+	tracer := tracerInit(cfg)
 
 	prometheusInit()
 	metricsRouter := chi.NewRouter()
@@ -59,15 +77,16 @@ func main() {
 	mainRouter.Use(middleware.Logger)
 	mainRouter.Use(middleware.RequestID)
 	mainRouter.Use(middleware.Recoverer)
+	mainRouter.Use(otelchi.Middleware(appName, otelchi.WithChiRoutes(mainRouter)))
 
-	mainRouter.Get("/", printRouterInfo("Main"))
+	mainRouter.Get("/", printRouterInfoWithTrace("Main", tracer))
 
 	apiRouter := chi.NewRouter()
-	apiRouter.Get("/", printRouterInfo("Api"))
+	apiRouter.Get("/", printRouterInfoWithTrace("Api", tracer))
 
 	ledRouter := chi.NewRouter()
-	ledRouter.Get("/", printRouterInfo("Led"))
-	ledRouter.Get("/{ledId}/state/{ledAction}", ledStateUpdate(lc))
+	ledRouter.Get("/", printRouterInfoWithTrace("Led", tracer))
+	ledRouter.Get("/{ledId}/state/{ledAction}", ledStateUpdateWithTrace(lc, tracer))
 
 	apiRouter.Mount("/led", ledRouter)
 	mainRouter.Mount("/api/v1", apiRouter)
